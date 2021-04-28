@@ -4,8 +4,12 @@ import java.util.Optional;
 
 public interface CacheService {
 
-	Optional<String> find(String url);
+	void saveTinyUrl(String url, String tinyUrl);
 
-	void save(String url, String tinyUrl);
+	Optional<String> findTinyUrl(String url);
+
+	Optional<String> findUrl(String tinyUrl);
+
+	void saveUrl(String string, String tinyUrl);
 
 }

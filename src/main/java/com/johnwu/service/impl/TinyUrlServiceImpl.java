@@ -7,6 +7,7 @@ import javax.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.johnwu.domain.TinyUrl;
+import com.johnwu.exception.UrlNotFoundException;
 import com.johnwu.repo.TinyUrlRepo;
 import com.johnwu.service.CacheService;
 import com.johnwu.service.TinyUrlGeneratorService;
@@ -26,7 +27,7 @@ public class TinyUrlServiceImpl implements TinyUrlService {
 	
 	@Transactional
 	public String shortenUrl(String url) {
-		Optional<String> tinyUrlOpt = cache.find(url);
+		Optional<String> tinyUrlOpt = cache.findTinyUrl(url);
 		if(tinyUrlOpt.isPresent())
 			return tinyUrlOpt.get();
 			
@@ -41,7 +42,22 @@ public class TinyUrlServiceImpl implements TinyUrlService {
 		} while(tiny != null); // make sure that newly generated tiny url not already associated with another url in db
 		
 		repo.save(new TinyUrl(url, tinyUrl));
-		cache.save(url, tinyUrl);
+		cache.saveTinyUrl(url, tinyUrl);
 		return tinyUrl;
+	}
+
+	@Override
+	public String retrieveUrl(String tinyUrl) throws UrlNotFoundException {
+		Optional<String> urlOpt = cache.findUrl(tinyUrl);
+		if(urlOpt.isPresent())
+			return urlOpt.get();
+		
+		TinyUrl url = repo.findByTinyUrl(tinyUrl);
+		if(url != null && url.getUrl() != null) {
+			cache.saveUrl(url.getUrl(), tinyUrl);
+			return url.getUrl();
+		}
+		
+		throw new UrlNotFoundException("No url found for: "+tinyUrl);
 	}
 }

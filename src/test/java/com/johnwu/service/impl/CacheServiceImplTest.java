@@ -23,16 +23,30 @@ public class CacheServiceImplTest {
 	}
 	
 	@Test
-	public void retrieve_success() {
+	public void retrieve_tinyUrl_success() {
 		String url = "http://google.com/search";
 		String tinyUrl = "tiny";
 		
-		cache.save(url, tinyUrl);
-		assertEquals(tinyUrl, cache.find(url).get());
+		cache.saveTinyUrl(url, tinyUrl);
+		assertEquals(tinyUrl, cache.findTinyUrl(url).get());
 	}	
 
 	@Test
-	public void retrieve_not_found() {
-		assertFalse(cache.find("http://google.com/search").isPresent());
+	public void retrieve_tinyUrl_not_found() {
+		assertFalse(cache.findTinyUrl("http://google.com/search").isPresent());
+	}
+	
+	@Test
+	public void retrieve_url_success() {
+		String url = "http://google.com/search";
+		String tinyUrl = "tiny";
+		
+		cache.saveUrl(url, tinyUrl);
+		assertEquals(url, cache.findUrl(tinyUrl).get());
+	}	
+
+	@Test
+	public void retrieve_url_not_found() {
+		assertFalse(cache.findUrl("sdsd2").isPresent());
 	}
 }
