@@ -3,7 +3,10 @@ package com.johnwu.service.impl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Future;
 
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import com.johnwu.service.CacheService;
@@ -24,23 +27,31 @@ public class CacheServiceImpl implements CacheService {
 	private Map<String, String> urlCache = new HashMap<>();
 	
 	@Override
-	public Optional<String> findTinyUrl(String url) {
+	@Async
+	public Future<Optional<String>> findTinyUrl(String url) {
 		String value = urlCache.get(url);
-		return value==null ? Optional.empty(): Optional.of(value);
+		Optional<String> opt = 
+			value==null ? Optional.empty(): Optional.of(value);
+		return new AsyncResult<Optional<String>>(opt);
 	}
 
 	@Override
+	@Async
 	public void saveTinyUrl(String url, String tinyUrl) {
 		urlCache.put(url, tinyUrl);
 	}
 
 	@Override
-	public Optional<String> findUrl(String tinyUrl) {
+	@Async
+	public Future<Optional<String>> findUrl(String tinyUrl) {
 		String value = tinyUrlCache.get(tinyUrl);
-		return value==null ? Optional.empty(): Optional.of(value);
+		Optional<String> opt = 
+			value==null ? Optional.empty(): Optional.of(value);
+		return new AsyncResult<Optional<String>>(opt);
 	}
 
 	@Override
+	@Async
 	public void saveUrl(String url, String tinyUrl) {
 		tinyUrlCache.put(tinyUrl, url);
 	}

@@ -7,12 +7,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.scheduling.annotation.AsyncResult;
 
 import com.johnwu.domain.TinyUrl;
 import com.johnwu.exception.UrlNotFoundException;
@@ -36,10 +41,13 @@ public class TinyUrlServiceImplTest {
 	public void shortenUrl_not_in_cache_db() {
 		String url = "http://google.com/search";
 		String tinyUrl = "tiny";
-		
+
+		when(cache.findTinyUrl(url)).thenReturn(
+				CompletableFuture.completedFuture(Optional.empty()));
 		when(generator.generateTinyUrl(url)).thenReturn(tinyUrl);
 		
 		assertEquals(tinyUrl, service.shortenUrl(url));
+		
 		verify(repo, times(1)).save(new TinyUrl(url, tinyUrl));
 	}
 	
@@ -48,7 +56,8 @@ public class TinyUrlServiceImplTest {
 		String url = "http://google.com/search";
 		String tinyUrl = "tiny";
 		
-		when(cache.findTinyUrl(url)).thenReturn(Optional.of(tinyUrl));
+		when(cache.findTinyUrl(url)).thenReturn(
+				CompletableFuture.completedFuture(Optional.of(tinyUrl)));
 		
 		assertEquals(tinyUrl, service.shortenUrl(url));
 		verify(repo, never()).findByUrl(null);
@@ -62,6 +71,8 @@ public class TinyUrlServiceImplTest {
 		String tinyUrl = "tiny";
 		
 		when(repo.findByUrl(url)).thenReturn(new TinyUrl(url, tinyUrl));
+		when(cache.findTinyUrl(url)).thenReturn(
+				CompletableFuture.completedFuture(Optional.empty()));
 
 		assertEquals(tinyUrl, service.shortenUrl(url));
 		verify(generator, never()).generateTinyUrl(url);
@@ -73,7 +84,8 @@ public class TinyUrlServiceImplTest {
 		String url = "http://google.com/search";
 		String tinyUrl = "tiny";
 		
-		when(cache.findUrl(tinyUrl)).thenReturn(Optional.of(url));
+		when(cache.findUrl(tinyUrl)).thenReturn(
+				new AsyncResult<Optional<String>>(Optional.of(url)));
 		assertEquals(url, service.retrieveUrl(tinyUrl));
 		verify(repo, never()).findByTinyUrl(null);
 	}
@@ -83,13 +95,17 @@ public class TinyUrlServiceImplTest {
 		String url = "http://google.com/search";
 		String tinyUrl = "tiny";
 		
+		when(cache.findUrl(tinyUrl)).thenReturn(
+				CompletableFuture.completedFuture(Optional.empty()));
 		when(repo.findByTinyUrl(tinyUrl)).thenReturn(new TinyUrl(url, tinyUrl));
 		assertEquals(url, service.retrieveUrl(tinyUrl));
 	}
 	
 	@Test(expected = UrlNotFoundException.class)
-	public void retrieveUrl_not_found() throws UrlNotFoundException {
+	public void retrieveUrl_not_found() throws UrlNotFoundException, InterruptedException, ExecutionException {
 		String tinyUrl = "tiny";
+		when(cache.findUrl(tinyUrl)).thenReturn(
+				CompletableFuture.completedFuture(Optional.empty()));
 		
 		service.retrieveUrl(tinyUrl);
 		verify(repo, never()).findByTinyUrl(null);
